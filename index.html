@@ -78,6 +78,8 @@
     #game.panel { justify-content:flex-start; }
     #gameWrap { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:8px; }
     .hud { flex:0 0 auto; display:flex; justify-content:space-between; align-items:center; width:100%; font-weight:900; font-size:clamp(16px,4.6vw,20px); }
+    .end-button { flex:0 0 auto; padding:8px 14px; font-size:14px; box-shadow:0 4px 0 rgba(180,80,50,.35); }
+    .end-button:active { transform:translateY(2px); box-shadow:0 2px 0 rgba(180,80,50,.35); }
     canvas {
       width:100%;
       height:100%;
@@ -115,7 +117,7 @@
 
     <section id='game' class='panel hidden'>
       <div id='gameWrap'>
-        <div class='hud'><span id='scoreText'>スコア 0</span><span id='timeText'>30</span></div>
+        <div class='hud'><span id='scoreText'>スコア 0</span><button id='endBtn' class='end-button'>おわる</button><span id='timeText'>30</span></div>
         <canvas id='canvas' width='720' height='980'></canvas>
       </div>
     </section>
@@ -160,6 +162,7 @@ const ctx = canvas.getContext('2d');
 const scoreText = document.getElementById('scoreText');
 const timeText = document.getElementById('timeText');
 const resultText = document.getElementById('resultText');
+const endBtn = document.getElementById('endBtn');
 
 let selected = characters[0];
 let player, items, score, timeLeft, lastTime, spawnTimer, rafId, running;
@@ -255,6 +258,15 @@ function resetGame() {
   lastTime = performance.now();
 }
 
+function finishGame() {
+  if (!running) return;
+  running = false;
+  cancelAnimationFrame(rafId);
+  playSound('finish');
+  show('result');
+  resultText.textContent = `${selected.name}のスコア：${score}`;
+}
+
 function startGame() {
   show('game');
   setAppHeight();
@@ -337,10 +349,7 @@ function loop(now) {
   timeText.textContent = Math.max(0, Math.ceil(timeLeft));
 
   if (timeLeft <= 0) {
-    running = false;
-    playSound('finish');
-    show('result');
-    resultText.textContent = `${selected.name}のスコア：${score}`;
+    finishGame();
     return;
   }
 
@@ -364,6 +373,7 @@ document.getElementById('startBtn').onclick = () => { renderCharacters(); show('
 document.getElementById('backTitleBtn').onclick = () => show('title');
 document.getElementById('againBtn').onclick = () => startGame();
 document.getElementById('selectAgainBtn').onclick = () => { renderCharacters(); show('select'); };
+endBtn.onclick = () => finishGame();
 
 renderCharacters();
 </script>
