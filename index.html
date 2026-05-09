@@ -78,6 +78,9 @@
     #game.panel { justify-content:flex-start; }
     #gameWrap { width:100%; height:100%; min-height:0; display:flex; flex-direction:column; gap:8px; }
     .hud { flex:0 0 auto; display:flex; justify-content:space-between; align-items:center; width:100%; font-weight:900; font-size:clamp(16px,4.6vw,20px); }
+    .shop { flex:0 0 auto; width:100%; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+    .shop button { padding:8px 12px; font-size:13px; box-shadow:0 3px 0 rgba(180,80,50,.35); }
+    .shop button:active { transform:translateY(1px); box-shadow:0 2px 0 rgba(180,80,50,.35); }
     .end-button { flex:0 0 auto; padding:8px 14px; font-size:14px; box-shadow:0 4px 0 rgba(180,80,50,.35); }
     .end-button:active { transform:translateY(2px); box-shadow:0 2px 0 rgba(180,80,50,.35); }
     canvas {
@@ -118,6 +121,10 @@
     <section id='game' class='panel hidden'>
       <div id='gameWrap'>
         <div class='hud'><span id='scoreText'>スコア 0</span><button id='endBtn' class='end-button'>おわる</button><span id='timeText'>30</span></div>
+        <div class='shop'>
+          <button id='buyClothBtn'>ふくチェンジ (5pt)</button>
+          <button id='buyHairBtn'>かみチェンジ (8pt)</button>
+        </div>
         <canvas id='canvas' width='720' height='980'></canvas>
       </div>
     </section>
@@ -168,7 +175,9 @@ const endBtn = document.getElementById('endBtn');
 let selected = characters[0];
 let player, items, score, timeLeft, lastTime, spawnTimer, rafId, running;
 let audioCtx = null;
+let bgmNodes = null;
 let lastCatchSoundAt = 0;
+const styleState = { cloth:0, hair:0 };
 const imageCache = new Map();
 
 function show(name) {
@@ -216,6 +225,52 @@ function playSound(name) {
     playTone(659.25, 0.10, 0, 'square', 0.035);
     playTone(523.25, 0.12, 0.11, 'square', 0.03);
   }
+}
+
+
+function startBgm() {
+  const soundCtx = getAudioContext();
+  if (!soundCtx) return;
+  if (bgmNodes) return;
+  const master = soundCtx.createGain();
+  master.gain.value = 0.025;
+  master.connect(soundCtx.destination);
+
+  const notes = [261.63, 329.63, 392.0, 329.63];
+  let step = 0;
+  const tick = () => {
+    if (!running || !bgmNodes) return;
+    const osc = soundCtx.createOscillator();
+    const gain = soundCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = notes[step % notes.length];
+    gain.gain.value = 0.0001;
+    gain.gain.exponentialRampToValueAtTime(0.7, soundCtx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, soundCtx.currentTime + 0.44);
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start();
+    osc.stop(soundCtx.currentTime + 0.45);
+    step++;
+    bgmNodes.timer = setTimeout(tick, 420);
+  };
+
+  bgmNodes = { master, timer:null };
+  tick();
+}
+
+function stopBgm() {
+  if (!bgmNodes) return;
+  clearTimeout(bgmNodes.timer);
+  try { bgmNodes.master.disconnect(); } catch (e) {}
+  bgmNodes = null;
+}
+
+function spendPoints(cost) {
+  if (score < cost) return false;
+  score -= cost;
+  scoreText.textContent = `スコア ${score}`;
+  return true;
 }
 
 function loadImage(path) {
@@ -273,7 +328,7 @@ function resetGame() {
   running = true;
   player = {
     x: canvas.width / 2,
-    y: canvas.height - 125,
+    y: canvas.height - 220,
     size: selected.size,
     targetX: canvas.width / 2
   };
@@ -287,6 +342,7 @@ function finishGame() {
   running = false;
   cancelAnimationFrame(rafId);
   playSound('finish');
+  stopBgm();
   show('result');
   resultText.textContent = `${selected.name}のスコア：${score}`;
 }
@@ -296,6 +352,7 @@ function startGame() {
   setAppHeight();
   resetGame();
   playSound('start');
+  startBgm();
   cancelAnimationFrame(rafId);
   rafId = requestAnimationFrame(loop);
 }
@@ -315,7 +372,10 @@ function drawPlayer() {
   const img = loadImage(selected.image);
   const s = player.size;
   if (img && img.complete && img.naturalWidth) {
-    ctx.drawImage(img, player.x - s / 2, player.y - s / 2, s, s);
+    const ratio = img.naturalWidth / img.naturalHeight;
+    const dw = ratio >= 1 ? s : s * ratio;
+    const dh = ratio >= 1 ? s / ratio : s;
+    ctx.drawImage(img, player.x - dw / 2, player.y - dh / 2, dw, dh);
   } else {
     ctx.font = `${s}px serif`;
     ctx.textAlign = 'center';
@@ -370,6 +430,15 @@ function loop(now) {
   });
 
   drawPlayer();
+
+  if (styleState.cloth) {
+    ctx.fillStyle = ['#ff8a65','#4db6ac','#9575cd'][styleState.cloth % 3];
+    ctx.fillRect(player.x - 28, player.y + 45, 56, 24);
+  }
+  if (styleState.hair) {
+    ctx.font = '32px serif';
+    ctx.fillText(['🎀','🧢','⭐'][styleState.hair % 3], player.x, player.y - 62);
+  }
   timeText.textContent = Math.max(0, Math.ceil(timeLeft));
 
   if (timeLeft <= 0) {
@@ -398,6 +467,8 @@ document.getElementById('backTitleBtn').onclick = () => show('title');
 document.getElementById('againBtn').onclick = () => startGame();
 document.getElementById('selectAgainBtn').onclick = () => { renderCharacters(); show('select'); };
 endBtn.onclick = () => finishGame();
+document.getElementById('buyClothBtn').onclick = () => { if (spendPoints(5)) styleState.cloth++; };
+document.getElementById('buyHairBtn').onclick = () => { if (spendPoints(8)) styleState.hair++; };
 
 renderCharacters();
 </script>
