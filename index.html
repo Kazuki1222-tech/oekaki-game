@@ -115,16 +115,17 @@
     <section id='select' class='panel hidden'>
       <h1>キャラをえらぶ</h1>
       <div id='characterGrid' class='character-grid'></div>
+      <div class='shop'>
+        <button id='menuClothBtn'>ふくチェンジ</button>
+        <button id='menuHairBtn'>かみチェンジ</button>
+      </div>
+      <p class='small'>メニューで見た目を決めてからスタート！</p>
       <button id='backTitleBtn'>もどる</button>
     </section>
 
     <section id='game' class='panel hidden'>
       <div id='gameWrap'>
         <div class='hud'><span id='scoreText'>スコア 0</span><button id='endBtn' class='end-button'>おわる</button><span id='timeText'>30</span></div>
-        <div class='shop'>
-          <button id='buyClothBtn'>ふくチェンジ (5pt)</button>
-          <button id='buyHairBtn'>かみチェンジ (8pt)</button>
-        </div>
         <canvas id='canvas' width='720' height='980'></canvas>
       </div>
     </section>
@@ -264,13 +265,6 @@ function stopBgm() {
   clearTimeout(bgmNodes.timer);
   try { bgmNodes.master.disconnect(); } catch (e) {}
   bgmNodes = null;
-}
-
-function spendPoints(cost) {
-  if (score < cost) return false;
-  score -= cost;
-  scoreText.textContent = `スコア ${score}`;
-  return true;
 }
 
 function loadImage(path) {
@@ -467,8 +461,8 @@ document.getElementById('backTitleBtn').onclick = () => show('title');
 document.getElementById('againBtn').onclick = () => startGame();
 document.getElementById('selectAgainBtn').onclick = () => { renderCharacters(); show('select'); };
 endBtn.onclick = () => finishGame();
-document.getElementById('buyClothBtn').onclick = () => { if (spendPoints(5)) styleState.cloth++; };
-document.getElementById('buyHairBtn').onclick = () => { if (spendPoints(8)) styleState.hair++; };
+document.getElementById('menuClothBtn').onclick = () => { styleState.cloth++; };
+document.getElementById('menuHairBtn').onclick = () => { styleState.hair++; };
 
 renderCharacters();
 </script>
