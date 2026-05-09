@@ -106,7 +106,7 @@
       <h1>おえかき<br>キャッチ</h1>
       <p>えらんだキャラをゆびでうごかして、ほしをあつめよう。</p>
       <button id='startBtn'>はじめる</button>
-      <p class='small'>娘さんの絵をキャラとして入れました</p>
+      <p class='small'>娘さんの絵をキャラとして入れました v3</p>
     </section>
 
     <section id='select' class='panel hidden'>
@@ -143,12 +143,11 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('scroll', setAppHeight);
 }
 
-// 壊れたdata URLを入れると、キャラ選択画面で画像アイコンだけが出る。
-// 娘さんの絵は assets/ch_001_oekaki.png のように置いてから、この値にパスを入れる。
-const OEKAKI_IMAGE = '';
+// 画像は index.html へbase64直貼りしない。assets配下の素材を参照する。
+const OEKAKI_IMAGE = 'assets/ch_001_oekaki.svg?v=20260509-3';
 
 const characters = [
-  { id:'oekaki01', name:'おえかきちゃん', emoji:'🎨', image:OEKAKI_IMAGE, speed:1.0, size:110 },
+  { id:'oekaki01', name:'おえかきちゃん', emoji:'🎨', image:OEKAKI_IMAGE, speed:1.0, size:170 },
   { id:'usagi', name:'うさぎ', emoji:'🐰', image:'', speed:1.05, size:96 },
   { id:'neko', name:'ねこ', emoji:'🐱', image:'', speed:1.0, size:96 }
 ];
